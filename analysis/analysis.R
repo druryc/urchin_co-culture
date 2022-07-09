@@ -1,4 +1,3 @@
-setwd("~/Desktop/urchins/")
 library(readxl)
 library(tidyverse)
 library(janitor)
