@@ -12,9 +12,9 @@ dates<-bind_cols(seq(1,9,1),c('07/22/21','07/29/21','08/05/21','08/12/21','08/26
      rename(timepoint=1,date=2)
 
 ############################## SURVIVORSHIP ######################################## #####
-meta<-read_xlsx("Urchin Treatment Meta Data.xlsx")%>%rename(rack=1,treatment=2)
+meta<-read_xlsx("./data/Urchin Treatment Meta Data.xlsx")%>%rename(rack=1,treatment=2)
 
-rack606<-read_xlsx("UrchinSurvivorship.xlsx",sheet=1)%>%clean_names()%>%
+rack606<-read_xlsx("./data/UrchinSurvivorship.xlsx",sheet=1)%>%clean_names()%>%
      select(contains('x'),contains('ind'),contains('agg'))%>%
      drop_na()%>%
      rename(plug=1)%>%select(-contains('x'))%>%
@@ -26,7 +26,7 @@ rack606<-read_xlsx("UrchinSurvivorship.xlsx",sheet=1)%>%clean_names()%>%
      mutate(timepoint = 1:n())%>%
      mutate(rack='rack_606')
 
-rack62<-read_xlsx("UrchinSurvivorship.xlsx",sheet=2)%>%clean_names()%>%
+rack62<-read_xlsx("./data/UrchinSurvivorship.xlsx",sheet=2)%>%clean_names()%>%
      select(contains('x'),contains('ind'),contains('agg'))%>%
      drop_na()%>%
      rename(plug=1)%>%select(-contains('x'))%>%
@@ -38,7 +38,7 @@ rack62<-read_xlsx("UrchinSurvivorship.xlsx",sheet=2)%>%clean_names()%>%
      mutate(timepoint = 1:n())%>%
      mutate(rack='rack_62')
 
-rack682<-read_xlsx("UrchinSurvivorship.xlsx",sheet=3)%>%clean_names()%>%
+rack682<-read_xlsx("./data/UrchinSurvivorship.xlsx",sheet=3)%>%clean_names()%>%
      select(contains('x'),contains('ind'),contains('agg'))%>%
      drop_na()%>%
      rename(plug=1)%>%select(-contains('x'))%>%
@@ -50,7 +50,7 @@ rack682<-read_xlsx("UrchinSurvivorship.xlsx",sheet=3)%>%clean_names()%>%
      mutate(timepoint = 1:n())%>%
      mutate(rack='rack_682')
 
-rack165<-read_xlsx("UrchinSurvivorship.xlsx",sheet=4)%>%clean_names()%>%
+rack165<-read_xlsx("./data/UrchinSurvivorship.xlsx",sheet=4)%>%clean_names()%>%
      select(contains('x'),contains('ind'),contains('agg'))%>%
      drop_na()%>%
      rename(plug=1)%>%select(-contains('x'))%>%
@@ -62,7 +62,7 @@ rack165<-read_xlsx("UrchinSurvivorship.xlsx",sheet=4)%>%clean_names()%>%
      mutate(timepoint = 1:n())%>%
      mutate(rack='rack_165')
 
-rack22<-read_xlsx("UrchinSurvivorship.xlsx",sheet=5)%>%clean_names()%>%
+rack22<-read_xlsx("./data/UrchinSurvivorship.xlsx",sheet=5)%>%clean_names()%>%
      select(contains('x'),contains('ind'),contains('agg'))%>%
      drop_na()%>%
      rename(plug=1)%>%select(-contains('x'))%>%
@@ -74,7 +74,7 @@ rack22<-read_xlsx("UrchinSurvivorship.xlsx",sheet=5)%>%clean_names()%>%
      mutate(timepoint = 1:n())%>%
      mutate(rack='rack_22')
 
-rack478<-read_xlsx("UrchinSurvivorship.xlsx",sheet=6)%>%clean_names()%>%
+rack478<-read_xlsx("./data/UrchinSurvivorship.xlsx",sheet=6)%>%clean_names()%>%
      select(contains('x'),contains('ind'),contains('agg'))%>%
      drop_na()%>%
      rename(plug=1)%>%select(-contains('x'))%>%
@@ -86,14 +86,16 @@ rack478<-read_xlsx("UrchinSurvivorship.xlsx",sheet=6)%>%clean_names()%>%
      mutate(timepoint = 1:n())%>%
      mutate(rack='rack_478')
 
-final_surv<-bind_rows(rack165,rack478,rack606,rack62,rack682,rack22)%>%
+all_data<-bind_rows(rack165,rack478,rack606,rack62,rack682,rack22)%>%
      mutate(count=as.numeric(count),rack=as.factor(rack),type=as.factor(type))%>%
      left_join(.,dates,by="timepoint")%>%
      mutate(date=mdy(date))%>%
     left_join(.,meta,by="rack")%>%
     arrange(plug,timepoint)%>%
     mutate(start=case_when(timepoint==1~count))%>%
-    fill(start,.direction = "down")%>%
+    fill(start,.direction = "down")
+
+final_surv<-all_data%>%
     filter(timepoint==9)%>%
     mutate(surv=count/start)%>%
     mutate(surv=case_when(surv>1~1,TRUE~as.numeric(surv)))%>%
@@ -106,12 +108,12 @@ wilcox.test(surv~treatment,data=final_surv%>%filter(type=="Individual"))
 leveneTest(surv~treatment,data=final_surv%>%filter(type=="Aggregate"))
 t.test(surv~treatment,data=final_surv%>%filter(type=="Aggregate"))
 
-
 final_surv%>%group_by(type,treatment)%>%summarise(mean=mean(surv,na.rm=TRUE),sd=sd(surv,na.rm=TRUE))
-alldata%>%filter(timepoint==1)%>%group_by(type)%>%summarise(sum=sum(count))
-nrow(alldata%>%filter(timepoint==1)%>%group_by(plug)%>%distinct())
+all_data%>%filter(timepoint==1)%>%group_by(type)%>%summarise(sum=sum(count))
+nrow(all_data%>%filter(timepoint==1)%>%group_by(plug)%>%distinct())
 
-endpoint<-ggplot(final_surv)+geom_boxplot(aes(treatment,surv,fill=treatment))+
+endpoint<-ggplot(final_surv)+
+  geom_boxplot(aes(treatment,surv,fill=treatment))+
   geom_point(aes(treatment,surv),size=0.25)+
   facet_wrap(~type)+
   theme_classic(base_size=8)+
@@ -140,7 +142,7 @@ endpoint<-tag_facet2(endpoint,
               tag_pool = my_tag);endpoint
 
 
-survdata<-alldata%>%
+survdata<-all_data%>%
     mutate(start=case_when(timepoint==1~count))%>%
     fill(start,.direction = "down")%>%
   mutate(dead=start-count)%>%
@@ -183,10 +185,11 @@ quartz(w=5.2,h=1.7)
 plot_grid(ind,agg,endpoint,nrow=1,rel_widths=c(1,1,1.3),labels=c("A","B","C"),label_size=8)
 
 ############################## GROWTH ############################################## #####
-meta<-read_xlsx("Urchin Treatment Meta Data.xlsx")%>%rename(rack=1,treatment=2)%>%
+meta<-read_xlsx("./data/Urchin Treatment Meta Data.xlsx")%>%rename(rack=1,treatment=2)%>%
   separate(rack,into=c("a","b"))%>%unite(rack,a,b,sep="")
 
-list<-as.vector(list.files(path="./",pattern="rack*"))
+list<-as.vector(list.files(path="./data/",pattern="rack*"))
+setwd("./data/")
 for (i in list){
      assign(paste0(file_path_sans_ext(i,compression=TRUE)),read_csv(paste0("./",i))%>%
               mutate(file=paste0(file_path_sans_ext(i,compression=TRUE)))%>%
@@ -195,7 +198,7 @@ for (i in list){
               rename(!!paste0(.$date[1]) := "area_mm_2")%>%
               select(-date)%>%clean_names())
 }
-
+setwd("../")
 out<-bind_rows(purrr::reduce(mget(ls(pattern = "rack165+")), full_join, by = c("layer","shape","rack")),
           purrr::reduce(mget(ls(pattern = "rack22+")), full_join, by = c("layer","shape","rack")),
           purrr::reduce(mget(ls(pattern = "rack478+")), full_join, by = c("layer","shape","rack")),
