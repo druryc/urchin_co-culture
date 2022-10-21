@@ -108,6 +108,11 @@ wilcox.test(surv~treatment,data=final_surv%>%filter(type=="Individual"))
 leveneTest(surv~treatment,data=final_surv%>%filter(type=="Aggregate"))
 t.test(surv~treatment,data=final_surv%>%filter(type=="Aggregate"))
 
+leveneTest(surv~type,data=final_surv%>%filter(treatment=="Control"))
+wilcox.test(surv~type,data=final_surv%>%filter(treatment=="Control"))
+leveneTest(surv~type,data=final_surv%>%filter(treatment=="Urchin"))
+t.test(surv~type,data=final_surv%>%filter(treatment=="Urchin"))
+
 final_surv%>%group_by(type,treatment)%>%summarise(mean=mean(surv,na.rm=TRUE),sd=sd(surv,na.rm=TRUE))
 all_data%>%filter(timepoint==1)%>%group_by(type)%>%summarise(sum=sum(count))
 nrow(all_data%>%filter(timepoint==1)%>%group_by(plug)%>%distinct())
@@ -120,7 +125,7 @@ endpoint<-ggplot(final_surv)+
   xlab("Treatment")+ylab("Endpoint Survivorship")+
   scale_fill_manual(values=c("gray","#6F3C4B"),name="Treatment")+
   theme(legend.position="none")+
-  scale_y_continuous(breaks=seq(0,1,0.2));endpoint
+  scale_y_continuous(breaks=seq(0,1.1,0.2));endpoint
 
 my_tag<-c("p<0.001","p=0.006")
 tag_facet2 <- function(p, open = "(", close = ")", tag_pool = letters, x = -Inf, y = Inf, 
